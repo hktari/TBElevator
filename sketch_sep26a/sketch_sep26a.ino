@@ -49,53 +49,57 @@ const uint8_t STEPPERPHASES8[8] = {0x30, 0x20, 0x60, 0x40, 0xC0, 0x80, 0x90, 0x1
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++
  
  
-const int CALIB_BTN_PIN = A0;
-
+const int CALIB_BTN_PIN = 13;
+const int STATE_LED_PIN = 11;
  
 long timeNow;
 long timeInterval = 1200;
 bool rotateDirection = true;
 long savedTime = micros();
 
-enum class ELEV_STATE
+enum ELEV_STATE
 {
   IDLE,
   CALIBRATION_STARTED,
   CALIBRATION_IN_PROGRESS,
   RUNNING,
 };
-enum class BTN_ACTION
+enum   BTN_ACTION
 {
-  NONE,
-  DOWN,
-  UP,
-  LONG_PRESS
+  NONE = 0,
+  DOWN = 1,
+  UP = 2,
+  LONG_PRESS = 3
 };
 
 long lastCalibBtnDown = 0;
 bool longPressCondition = 0;
-int prevCalibBtnState = 0;
+int prevCalibBtnState = LOW;
 ELEV_STATE CurState = ELEV_STATE::IDLE;
 BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE;
 
 int elevSteps = 0;
 int curStep = 0;
 bool moveDown;
+int ledState = LOW;
 
 void setup() {
   // Set stepper pins to output
   DDRD = DDRD | STEPPERPORT;
   pinMode(CALIB_BTN_PIN, INPUT);
+  pinMode(STATE_LED_PIN, OUTPUT);
   Serial.begin(9600);
+
+  SetState(ELEV_STATE::IDLE);
 }
- 
+
 void loop() {
 
   HandleCalibBtn();
-
+  
   if(CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
   {
-    CurState = ELEV_STATE::CALIBRATION_STARTED;
+    SetState(ELEV_STATE::CALIBRATION_STARTED);
   }
   
   switch(CurState)
@@ -103,21 +107,25 @@ void loop() {
     case ELEV_STATE::IDLE:
       if(CurCalibBtnAction == BTN_ACTION::UP && elevSteps != 0)
       {
-        CurState == ELEV_STATE::RUNNING;
+        digitalWrite(STATE_LED_PIN, LOW);
+        SetState(ELEV_STATE::RUNNING);
       }
       break;
     case ELEV_STATE::CALIBRATION_STARTED:
       // Set LED high
+      digitalWrite(STATE_LED_PIN, HIGH);
       // User lowers the lift to the ground and creates tension in the wire
       // User presses the calibration button
-      if(CurCalibBtnAction == BTN_ACTION::UP)
+      if(CurCalibBtnAction == BTN_ACTION::DOWN)
       {
         elevSteps = curStep = 0;
-        CurState = ELEV_STATE::CALIBRATION_IN_PROGRESS;
+        SetState(ELEV_STATE::CALIBRATION_IN_PROGRESS);
       }
       break;
     case ELEV_STATE::CALIBRATION_IN_PROGRESS:
       // Set LED blinking ?
+      ledState = !ledState;
+      digitalWrite(STATE_LED_PIN, ledState);
       // Start moving up and count steps
       if(tryMove(false))
       {
@@ -125,14 +133,16 @@ void loop() {
       }
 
       // User presses calibration button
-      if(CurCalibBtnAction == BTN_ACTION::UP)
+      if(CurCalibBtnAction == BTN_ACTION::DOWN)
       {
         curStep = elevSteps;
         moveDown = true;
-        CurState = ELEV_STATE::RUNNING;
+        SetState(ELEV_STATE::RUNNING);
       }
       break;
     case ELEV_STATE::RUNNING:
+      digitalWrite(STATE_LED_PIN, LOW);
+      
       if(tryMove(moveDown))
       {
         curStep--;
@@ -146,7 +156,7 @@ void loop() {
 
       if(CurCalibBtnAction == BTN_ACTION::UP)
       {
-        CurState == ELEV_STATE::IDLE;
+        SetState(ELEV_STATE::IDLE);
       }
       break;
   }
@@ -161,13 +171,15 @@ void HandleCalibBtn()
 {
   int calibBtnState = digitalRead(CALIB_BTN_PIN);
 
-  if(prevCalibBtnState == 1 && calibBtnState == 0)
+  CurCalibBtnAction = BTN_ACTION::NONE;
+  
+  if(calibBtnState == HIGH && prevCalibBtnState != calibBtnState)
   {
     lastCalibBtnDown = millis();
     longPressCondition = true;
     CurCalibBtnAction = BTN_ACTION::DOWN;
   }
-  else if(prevCalibBtnState == 0 && calibBtnState == 1)
+  else if(calibBtnState == LOW && prevCalibBtnState != calibBtnState)
   {
     longPressCondition = false;
     CurCalibBtnAction = BTN_ACTION::UP;
@@ -177,8 +189,8 @@ void HandleCalibBtn()
     CurCalibBtnAction = BTN_ACTION::LONG_PRESS;
     longPressCondition = false;
   }
-
-  prevCalibBtnState = calibBtnState;
+  
+  prevCalibBtnState = calibBtnState ;
 }
 
 
@@ -218,9 +230,14 @@ void phase8 (bool isClockwise) {
     PORTD = PORTD | STEPPERPHASES8[phaseIndex];
     if (phaseIndex == 0) {
       phaseIndex = 7;
-    } else {
+    } else {  
       phaseIndex--;
     }
   }
 }
  
+void SetState(ELEV_STATE state)
+{
+  Serial.println((int)state);
+  CurState = state;  
+}
