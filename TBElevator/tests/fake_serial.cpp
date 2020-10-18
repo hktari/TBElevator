@@ -22,7 +22,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "fake_serial.h"
+#include "..\fake_serial.h"
 
 void FakeSerial::begin(unsigned long speed) {
   return;
@@ -32,7 +32,7 @@ void FakeSerial::end() {
   return;
 }
 
-size_t FakeSerial::write( const unsigned char buf[], size_t size ) {
+unsigned long long FakeSerial::write( const unsigned char buf[], unsigned long long size ) {
   using namespace std;
   ios_base::fmtflags oldFlags = cout.flags();
   streamsize oldPrec = cout.precision();

@@ -23,7 +23,7 @@ class FakeSerial {
 public:
   void begin(unsigned long);
   void end();
-  unsigned int write(const unsigned char*, unsigned int);
+  unsigned long long write(const unsigned char*, unsigned long long);
 };
 
 extern FakeSerial Serial;

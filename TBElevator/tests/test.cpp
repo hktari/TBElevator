@@ -1,5 +1,5 @@
-#include "ArduinoProxy.h"
-#include "TBElevator.h"
+#include "..\ArduinoProxy.h"
+#include "..\TBElevator.h"
 #include <iostream>
 
 int main()

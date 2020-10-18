@@ -19,7 +19,7 @@
 */
 
 #include <sys/timeb.h>
-#include "ArduinoProxy.h"
+#include "..\ArduinoProxy.h"
 
 timeb t_start;
 void SetPortD(unsigned int val)
@@ -35,7 +35,7 @@ void SetDDRD(unsigned int val)
 }
 unsigned int GetDDRD()
 {
-	return unsigned int();
+	return 0;
 }
 void pinMode(unsigned int pin, unsigned int mode)
 {
