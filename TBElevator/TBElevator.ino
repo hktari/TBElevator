@@ -33,7 +33,26 @@
 # THE SOFTWARE.
  */
  
- 
+
+enum class ELEV_STATE
+{
+    IDLE,
+    CALIBRATION_STARTED,
+    CALIBRATION_IN_PROGRESS,
+    RUNNING,
+};
+enum class BTN_ACTION
+{
+    NONE = 0,
+    DOWN = 1,
+    UP = 2,
+    LONG_PRESS = 3
+};
+
+void HandleCalibBtn();
+bool tryMove(bool down);
+void phase8(bool isClockwise);
+
 //+++++++++++ Variables +++++++++++++++
 // Track current stepper phase by index
 int phaseIndex = 0;
@@ -57,21 +76,6 @@ long timeInterval = 1200;
 bool rotateDirection = true;
 long savedTime = micros();
 
-enum ELEV_STATE
-{
-  IDLE,
-  CALIBRATION_STARTED,
-  CALIBRATION_IN_PROGRESS,
-  RUNNING,
-};
-enum   BTN_ACTION
-{
-  NONE = 0,
-  DOWN = 1,
-  UP = 2,
-  LONG_PRESS = 3
-};
-
 long lastCalibBtnDown = 0;
 bool longPressCondition = 0;
 int prevCalibBtnState = LOW;
@@ -82,6 +86,13 @@ int elevSteps = 0;
 int curStep = 0;
 bool moveDown;
 int ledState = LOW;
+
+
+void SetState(ELEV_STATE state)
+{
+    Serial.println((int)state);
+    CurState = state;
+}
 
 void setup() {
   // Set stepper pins to output
@@ -94,7 +105,6 @@ void setup() {
 }
 
 void loop() {
-
   HandleCalibBtn();
   
   if(CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
@@ -125,7 +135,7 @@ void loop() {
     case ELEV_STATE::CALIBRATION_IN_PROGRESS:
       // Set LED blinking ?
       ledState = !ledState;
-      digitalWrite(STATE_LED_PIN, ledState);
+      //digitalWrite(STATE_LED_PIN, ledState);
       // Start moving up and count steps
       if(tryMove(false))
       {
@@ -154,7 +164,7 @@ void loop() {
         moveDown = !moveDown;
       }
 
-      if(CurCalibBtnAction == BTN_ACTION::UP)
+      if(CurCalibBtnAction == BTN_ACTION::DOWN)
       {
         SetState(ELEV_STATE::IDLE);
       }
@@ -165,7 +175,7 @@ void loop() {
     
   //turn90();
   //PORTD = PORTD & SERIALMASK;   
-  delay(30);
+  //delay(30);
 }
 void HandleCalibBtn()
 {
@@ -234,10 +244,4 @@ void phase8 (bool isClockwise) {
       phaseIndex--;
     }
   }
-}
- 
-void SetState(ELEV_STATE state)
-{
-  Serial.println((int)state);
-  CurState = state;  
 }
