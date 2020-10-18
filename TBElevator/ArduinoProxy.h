@@ -18,7 +18,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.  
 */
 #pragma once
-#include <cstdint>
+//#include <cstdint>
 
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #define lowByte(w) ((unsigned char) ((w) & 0xff))
@@ -26,16 +26,19 @@
 #define HIGH 0x1
 #define LOW  0x0
 
-static uint8_t _portD;
-void SetPortD(uint8_t val);
-uint8_t GetPortD();
+static unsigned int _portD;
+void SetPortD(unsigned int val);
+unsigned int GetPortD();
+
+void SetDDRD(unsigned int val);
+unsigned int GetDDRD();
 
 typedef unsigned char byte;
 typedef unsigned short int word;
 
-void pinMode(uint8_t pin, uint8_t mode);
-void digitalWrite(uint8_t pin, uint8_t val);
-int digitalRead(uint8_t pin);
+void pinMode(unsigned int pin, unsigned int mode);
+void digitalWrite(unsigned int pin, unsigned int val);
+int digitalRead(unsigned int pin);
 unsigned long millis();
 unsigned long micros();
 void delay(unsigned long ms);

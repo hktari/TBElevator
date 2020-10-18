@@ -34,65 +34,65 @@
  */
 
 #include "TBElevator.h"
+//
+//enum class ELEV_STATE
+//{
+//	IDLE,
+//	CALIBRATION_STARTED,
+//	CALIBRATION_IN_PROGRESS,
+//	RUNNING,
+//};
+//enum class BTN_ACTION
+//{
+//	NONE = 0,
+//	DOWN = 1,
+//	UP = 2,
+//	LONG_PRESS = 3
+//};
 
-enum class ELEV_STATE
-{
-	IDLE,
-	CALIBRATION_STARTED,
-	CALIBRATION_IN_PROGRESS,
-	RUNNING,
-};
-enum class BTN_ACTION
-{
-	NONE = 0,
-	DOWN = 1,
-	UP = 2,
-	LONG_PRESS = 3
-};
-
-void HandleCalibBtn();
+void HandleCalibBtn();/*
 bool tryMove(bool down);
-void phase8(bool isClockwise);
+void phase8(bool isClockwise);*/
 
 //+++++++++++ Variables +++++++++++++++
 // Track current stepper phase by index
-int phaseIndex = 0;
-
-//++++++++++++++ Initialise Constants ++++++++++++++++
-// Stepper port pin assignment. Default 0b11110000 on port D.
-const uint8_t STEPPERPORT = 0xF0;
-// Serial port pins mask for port D.
-const uint8_t SERIALMASK = 0x03;
-// Motor 8-phase sequence lookup list
-// pins 7, 6, 5, 4 (0011, 0010, 0110, 0100, 1100, 1000, 1001, 0001)
-const uint8_t STEPPERPHASES8[8] = { 0x30, 0x20, 0x60, 0x40, 0xC0, 0x80, 0x90, 0x10 };
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//int phaseIndex = 0;
+//
+////++++++++++++++ Initialise Constants ++++++++++++++++
+//// Stepper port pin assignment. Default 0b11110000 on port D.
+//const uint8_t STEPPERPORT = 0xF0;
+//// Serial port pins mask for port D.
+//const uint8_t SERIALMASK = 0x03;
+//// Motor 8-phase sequence lookup list
+//// pins 7, 6, 5, 4 (0011, 0010, 0110, 0100, 1100, 1000, 1001, 0001)
+//const uint8_t STEPPERPHASES8[8] = { 0x30, 0x20, 0x60, 0x40, 0xC0, 0x80, 0x90, 0x10 };
+////+++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 const int CALIB_BTN_PIN = 13;
 const int STATE_LED_PIN = 11;
 
-long timeNow;
-long timeInterval = 1200;
-bool rotateDirection = true;
-long savedTime = micros();
+//long timeNow;
+//long timeInterval = 1200;
+//bool rotateDirection = true;
+//long savedTime = micros();
 
 long lastCalibBtnDown = 0;
 bool longPressCondition = 0;
 int prevCalibBtnState = LOW;
-ELEV_STATE CurState = ELEV_STATE::IDLE;
+//ELEV_STATE CurState = ELEV_STATE::IDLE;
 BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE;
+//
+//int elevSteps = 0;
+//int curStep = 0;
+//bool moveDown;
+//int ledState = LOW;
+//long ledBlinkTimestamp = 0;
+//const long LED_BLINK_SPEED = 500; // ms
 
-int elevSteps = 0;
-int curStep = 0;
-bool moveDown;
-int ledState = LOW;
-long ledBlinkTimestamp = 0;
-const long LED_BLINK_SPEED = 500; // ms
-
-bool waitingForPassengers = false;
-const long WAIT_FOR_PASSENGERS_DURATION = 5000; // ms
-long waitForPassengersTimestamp;
+//bool waitingForPassengers = false;
+//const long WAIT_FOR_PASSENGERS_DURATION = 5000; // ms
+//long waitForPassengersTimestamp;
 
 
 TBElevator elevator;
@@ -105,24 +105,16 @@ void SetState(ELEV_STATE state)
 }
 
 void setup() {
-	// Set stepper pins to output
-	DDRD = DDRD | STEPPERPORT;
 	pinMode(CALIB_BTN_PIN, INPUT);
 	pinMode(STATE_LED_PIN, OUTPUT);
 	Serial.begin(9600);
-
+	//elevator = TBElevator();
 	SetState(ELEV_STATE::IDLE);
 }
 
 void loop() {
 	HandleCalibBtn();
-
-	if (CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
-	{
-		elevator.SetState(ELEV_STATE::CALIBRATION_STARTED);
-		//SetState(ELEV_STATE::CALIBRATION_STARTED);
-	}
-
+	elevator.Tick(millis(), CurCalibBtnAction);
 	
 
 

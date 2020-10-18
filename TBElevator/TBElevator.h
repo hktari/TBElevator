@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 enum class ELEV_STATE
 {
 	IDLE,
@@ -28,7 +26,7 @@ public:
 	}
 
 	void SetState(ELEV_STATE state);
-	void Tick(unsigned long& millis);
+	void Tick(const unsigned long& millis, BTN_ACTION CurCalibBtnAction);
 
 	void phase8(bool isClockwise);
 	bool tryMove(bool down);
@@ -40,12 +38,12 @@ private:
 
 	//++++++++++++++ Initialise Constants ++++++++++++++++
 	// Stepper port pin assignment. Default 0b11110000 on port D.
-	const uint8_t STEPPERPORT = 0xF0;
+	const unsigned int STEPPERPORT = 0xF0;
 	// Serial port pins mask for port D.
-	const uint8_t SERIALMASK = 0x03;
+	const unsigned int SERIALMASK = 0x03;
 	// Motor 8-phase sequence lookup list
 	// pins 7, 6, 5, 4 (0011, 0010, 0110, 0100, 1100, 1000, 1001, 0001)
-	const uint8_t STEPPERPHASES8[8] = { 0x30, 0x20, 0x60, 0x40, 0xC0, 0x80, 0x90, 0x10 };
+	const unsigned int STEPPERPHASES8[8] = { 0x30, 0x20, 0x60, 0x40, 0xC0, 0x80, 0x90, 0x10 };
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 

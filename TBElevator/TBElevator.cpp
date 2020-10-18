@@ -1,5 +1,5 @@
 #include "TBElevator.h"
-#include "mock_arduino.h"
+#include "ArduinoProxy.h"
 
 const int CALIB_BTN_PIN = 13;
 const int STATE_LED_PIN = 11;
@@ -7,6 +7,8 @@ const int STATE_LED_PIN = 11;
 TBElevator::TBElevator()
 	: m_currentState(ELEV_STATE::IDLE), savedTime(micros()), ledState(LOW)
 {
+	// Set stepper pins to output
+	SetDDRD(GetDDRD() | STEPPERPORT);
 }
 
 void TBElevator::phase8(bool isClockwise) {
@@ -59,9 +61,9 @@ void TBElevator::SetState(ELEV_STATE state)
 {
 }
 
-void TBElevator::Tick(unsigned long& millis)
+void TBElevator::Tick(const unsigned long& millis, BTN_ACTION CurCalibBtnAction)
 {
-	BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE; // FIX THIS
+	//BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE; // FIX THIS
 
 	switch (m_currentState)
 	{

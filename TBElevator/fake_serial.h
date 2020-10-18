@@ -19,13 +19,11 @@
 */
 #pragma once
 
-#include <iostream>
-
 class FakeSerial {
 public:
   void begin(unsigned long);
   void end();
-  size_t write(const unsigned char*, size_t);
+  unsigned int write(const unsigned char*, unsigned int);
 };
 
 extern FakeSerial Serial;

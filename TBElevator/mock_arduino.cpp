@@ -19,24 +19,31 @@
 */
 
 #include <sys/timeb.h>
-#include "mock_arduino.h"
+#include "ArduinoProxy.h"
 
 timeb t_start;
-void SetPortD(uint8_t val)
+void SetPortD(unsigned int val)
 {
 	_portD = val;
 }
-uint8_t GetPortD()
+unsigned int GetPortD()
 {
 	return _portD;
 }
-void pinMode(uint8_t pin, uint8_t mode)
+void SetDDRD(unsigned int val)
 {
 }
-void digitalWrite(uint8_t pin, uint8_t val)
+unsigned int GetDDRD()
+{
+	return unsigned int();
+}
+void pinMode(unsigned int pin, unsigned int mode)
 {
 }
-int digitalRead(uint8_t pin)
+void digitalWrite(unsigned int pin, unsigned int val)
+{
+}
+int digitalRead(unsigned int pin)
 {
 	return 0;
 }
