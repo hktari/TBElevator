@@ -139,11 +139,10 @@ void loop() {
 		}
 		break;
 	case ELEV_STATE::CALIBRATION_IN_PROGRESS:
-		auto now = millis();
-		if (now - ledBlinkTimestamp > LED_BLINK_SPEED)
+		if (millis() - ledBlinkTimestamp > LED_BLINK_SPEED)
 		{
 			ledState = !ledState;
-			ledBlinkTimestamp = now;
+			ledBlinkTimestamp = millis();
 			digitalWrite(STATE_LED_PIN, ledState);
 		}
 
