@@ -33,6 +33,7 @@
 # THE SOFTWARE.
  */
 
+#include "TBElevator.h"
 
 enum class ELEV_STATE
 {
@@ -93,10 +94,14 @@ bool waitingForPassengers = false;
 const long WAIT_FOR_PASSENGERS_DURATION = 5000; // ms
 long waitForPassengersTimestamp;
 
+
+TBElevator elevator;
+
 void SetState(ELEV_STATE state)
 {
 	Serial.println((int)state);
-	CurState = state;
+	//CurState = state;
+	elevator.SetState(state);
 }
 
 void setup() {
@@ -114,86 +119,11 @@ void loop() {
 
 	if (CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
 	{
-		SetState(ELEV_STATE::CALIBRATION_STARTED);
+		elevator.SetState(ELEV_STATE::CALIBRATION_STARTED);
+		//SetState(ELEV_STATE::CALIBRATION_STARTED);
 	}
 
-	switch (CurState)
-	{
-	case ELEV_STATE::IDLE:
-		if (CurCalibBtnAction == BTN_ACTION::DOWN && elevSteps != 0)
-		{
-			digitalWrite(STATE_LED_PIN, LOW);
-			waitingForPassengers = false; // Start running immediately
-			SetState(ELEV_STATE::RUNNING);
-		}
-		break;
-	case ELEV_STATE::CALIBRATION_STARTED:
-		// Set LED high
-		digitalWrite(STATE_LED_PIN, HIGH);
-		// User lowers the lift to the ground and creates tension in the wire
-		// User presses the calibration button
-		if (CurCalibBtnAction == BTN_ACTION::DOWN)
-		{
-			elevSteps = curStep = 0;
-			SetState(ELEV_STATE::CALIBRATION_IN_PROGRESS);
-		}
-		break;
-	case ELEV_STATE::CALIBRATION_IN_PROGRESS:
-		if (millis() - ledBlinkTimestamp > LED_BLINK_SPEED)
-		{
-			ledState = !ledState;
-			ledBlinkTimestamp = millis();
-			digitalWrite(STATE_LED_PIN, ledState);
-		}
-
-		// Start moving up and count steps
-		if (tryMove(false))
-		{
-			elevSteps++;
-		}
-
-		// User presses calibration button
-		if (CurCalibBtnAction == BTN_ACTION::DOWN)
-		{
-			curStep = elevSteps;
-			moveDown = true;
-			waitingForPassengers = false;
-			digitalWrite(STATE_LED_PIN, LOW);
-			SetState(ELEV_STATE::RUNNING);
-		}
-		break;
-	case ELEV_STATE::RUNNING:
-
-		if (!waitingForPassengers)
-		{
-			if (tryMove(moveDown))
-			{
-				curStep--;
-			}
-		}
-		else if(millis() - waitForPassengersTimestamp > WAIT_FOR_PASSENGERS_DURATION)
-		{
-			waitingForPassengers = false;
-		}
-
-		if (curStep == 0)
-		{
-			curStep = elevSteps;
-			moveDown = !moveDown;
-			waitingForPassengers = true;
-			waitForPassengersTimestamp = millis();
-		}
-
-		if (CurCalibBtnAction == BTN_ACTION::DOWN)
-		{
-			SetState(ELEV_STATE::IDLE);
-
-			// Clear stepper pins
-			PORTD = PORTD & SERIALMASK;
-		}
-		break;
-	}
-
+	
 
 
 	//turn90();
@@ -226,49 +156,49 @@ void HandleCalibBtn()
 	prevCalibBtnState = calibBtnState;
 }
 
-
-bool tryMove(bool down)
-{
-	timeNow = micros();
-	if (timeNow - savedTime > timeInterval) {
-		phase8(down);
-		savedTime = micros();
-		return true;
-	}
-	return false;
-}
-
-void phase8(bool isClockwise) {
-	// Clear stepper pins
-	PORTD = PORTD & SERIALMASK;
-
-	// Alter rotation direction
-	bool rotateDirection;
-	if (isClockwise == true) {
-		rotateDirection = true;
-	}
-	else {
-		rotateDirection = false;
-	}
-
-	if (rotateDirection == true) {
-		// Output the next stepper phase - Clockwise
-		PORTD = PORTD | STEPPERPHASES8[phaseIndex];
-		if (phaseIndex == 7) {
-			phaseIndex = 0;
-		}
-		else {
-			phaseIndex++;
-		}
-	}
-	else {
-		// Output the next stepper phase - Counter Clockwise
-		PORTD = PORTD | STEPPERPHASES8[phaseIndex];
-		if (phaseIndex == 0) {
-			phaseIndex = 7;
-		}
-		else {
-			phaseIndex--;
-		}
-	}
-}
+//
+//bool tryMove(bool down)
+//{
+//	timeNow = micros();
+//	if (timeNow - savedTime > timeInterval) {
+//		phase8(down);
+//		savedTime = micros();
+//		return true;
+//	}
+//	return false;
+//}
+//
+//void phase8(bool isClockwise) {
+//	// Clear stepper pins
+//	PORTD = PORTD & SERIALMASK;
+//
+//	// Alter rotation direction
+//	bool rotateDirection;
+//	if (isClockwise == true) {
+//		rotateDirection = true;
+//	}
+//	else {
+//		rotateDirection = false;
+//	}
+//
+//	if (rotateDirection == true) {
+//		// Output the next stepper phase - Clockwise
+//		PORTD = PORTD | STEPPERPHASES8[phaseIndex];
+//		if (phaseIndex == 7) {
+//			phaseIndex = 0;
+//		}
+//		else {
+//			phaseIndex++;
+//		}
+//	}
+//	else {
+//		// Output the next stepper phase - Counter Clockwise
+//		PORTD = PORTD | STEPPERPHASES8[phaseIndex];
+//		if (phaseIndex == 0) {
+//			phaseIndex = 7;
+//		}
+//		else {
+//			phaseIndex--;
+//		}
+//	}
+//}
