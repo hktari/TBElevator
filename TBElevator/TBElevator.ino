@@ -187,6 +187,9 @@ void loop() {
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
 			SetState(ELEV_STATE::IDLE);
+
+			// Clear stepper pins
+			PORTD = PORTD & SERIALMASK;
 		}
 		break;
 	}
