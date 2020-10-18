@@ -89,6 +89,10 @@ int ledState = LOW;
 long ledBlinkTimestamp = 0;
 const long LED_BLINK_SPEED = 500; // ms
 
+bool waitingForPassengers = false;
+const long WAIT_FOR_PASSENGERS_DURATION = 5000; // ms
+long waitForPassengersTimestamp;
+
 void SetState(ELEV_STATE state)
 {
 	Serial.println((int)state);
@@ -116,9 +120,10 @@ void loop() {
 	switch (CurState)
 	{
 	case ELEV_STATE::IDLE:
-		if (CurCalibBtnAction == BTN_ACTION::UP && elevSteps != 0)
+		if (CurCalibBtnAction == BTN_ACTION::DOWN && elevSteps != 0)
 		{
 			digitalWrite(STATE_LED_PIN, LOW);
+			waitingForPassengers = false; // Start running immediately
 			SetState(ELEV_STATE::RUNNING);
 		}
 		break;
@@ -153,20 +158,31 @@ void loop() {
 		{
 			curStep = elevSteps;
 			moveDown = true;
+			waitingForPassengers = false;
 			digitalWrite(STATE_LED_PIN, LOW);
 			SetState(ELEV_STATE::RUNNING);
 		}
 		break;
 	case ELEV_STATE::RUNNING:
-		if (tryMove(moveDown))
+
+		if (!waitingForPassengers)
 		{
-			curStep--;
+			if (tryMove(moveDown))
+			{
+				curStep--;
+			}
+		}
+		else if(millis() - waitForPassengersTimestamp > WAIT_FOR_PASSENGERS_DURATION)
+		{
+			waitingForPassengers = false;
 		}
 
 		if (curStep == 0)
 		{
 			curStep = elevSteps;
 			moveDown = !moveDown;
+			waitingForPassengers = true;
+			waitForPassengersTimestamp = millis();
 		}
 
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
