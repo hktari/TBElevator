@@ -4,17 +4,26 @@
 
 // ********** HELPER METHODS *************
 //
-unsigned long time_step = 0;
+unsigned long sim_time = 0;
 unsigned long time_interval;
 void reset_time(unsigned long set_time_interval)
 {
 	time_interval = set_time_interval;
-	time_step = 0;
+	sim_time = 0;
 }
 
-unsigned long advance_time()
+unsigned long advance_time(unsigned long alt_time_interval = 0L)
 {
-	return time_interval * time_step++;
+	if(alt_time_interval != 0L)
+	{
+		sim_time += alt_time_interval;
+	}
+	else
+	{
+		sim_time += time_interval;
+	}
+
+	return sim_time;
 }
 void calibrate_elev(TBElevator& elev, int steps)
 {
@@ -56,6 +65,14 @@ TEST_CASE("Elevator calibration")
 
 TEST_CASE("Elevator waits for passengers after reaching bottom")
 {
+	initialize_mock_arduino();
+	TBElevator elev;
+	reset_time(elev.MOTOR_STEP_INTERVAL);
+	calibrate_elev(elev, 2);
+
+	elev.Tick(advance_time(), BTN_ACTION::NONE);
+	elev.Tick(advance_time(), BTN_ACTION::NONE);
+	REQUIRE(elev.IsWaitingForPassengers());
 }
 
 TEST_CASE("Elevator goes back up after reaching bottom")
@@ -72,7 +89,19 @@ TEST_CASE("Elevator goes back up after reaching bottom")
 
 TEST_CASE("Elevator goes back down after reaching top")
 {
+	initialize_mock_arduino();
+	TBElevator elev;
+	reset_time(elev.MOTOR_STEP_INTERVAL);
+	calibrate_elev(elev, 2);
 
+	elev.Tick(advance_time(), BTN_ACTION::NONE);
+	elev.Tick(advance_time(), BTN_ACTION::NONE);
+	
+	elev.Tick(advance_time(elev.WAIT_FOR_PASSENGERS_DURATION), BTN_ACTION::NONE);
+	
+	elev.Tick(advance_time(), BTN_ACTION::NONE);
+	elev.Tick(advance_time(), BTN_ACTION::NONE);
+	REQUIRE(elev.IsMovingDown());
 }
 
 TEST_CASE("Elevator stays in idle when button is pressed and calibration hasn't occured yet")
