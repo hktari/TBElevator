@@ -59,11 +59,16 @@ bool TBElevator::tryMove(bool down)
 
 void TBElevator::SetState(ELEV_STATE state)
 {
+	m_currentState = state;
 }
 
 void TBElevator::Tick(const unsigned long& millis, BTN_ACTION CurCalibBtnAction)
 {
 	//BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE; // FIX THIS
+	if(CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
+	{
+		m_currentState = ELEV_STATE::CALIBRATION_STARTED;
+	}
 
 	switch (m_currentState)
 	{
