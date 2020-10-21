@@ -5,7 +5,7 @@ const int CALIB_BTN_PIN = 13;
 const int STATE_LED_PIN = 11;
 
 TBElevator::TBElevator()
-	: m_currentState(ELEV_STATE::IDLE), savedTime(micros()), ledState(LOW)
+	: m_currentState(ELEV_STATE::IDLE), savedTime(0), ledState(LOW)
 {
 	// Set stepper pins to output
 	SetDDRD(GetDDRD() | STEPPERPORT);
@@ -46,12 +46,12 @@ void TBElevator::phase8(bool isClockwise) {
 	}
 }
 
-bool TBElevator::tryMove(bool down)
+bool TBElevator::tryMove(bool down, const unsigned long& micros)
 {
-	timeNow = micros();
-	if (timeNow - savedTime > timeInterval) {
+	timeNow = micros;
+	if (timeNow - savedTime >= MOTOR_STEP_INTERVAL) {
 		phase8(down);
-		savedTime = micros();
+		savedTime = micros;
 		return true;
 	}
 	return false;
@@ -62,7 +62,7 @@ void TBElevator::SetState(ELEV_STATE state)
 	m_currentState = state;
 }
 
-void TBElevator::Tick(const unsigned long& millis, BTN_ACTION CurCalibBtnAction)
+void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 {
 	//BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE; // FIX THIS
 	if(CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
@@ -73,7 +73,7 @@ void TBElevator::Tick(const unsigned long& millis, BTN_ACTION CurCalibBtnAction)
 	switch (m_currentState)
 	{
 	case ELEV_STATE::IDLE:
-		if (CurCalibBtnAction == BTN_ACTION::DOWN && elevSteps != 0)
+		if (CurCalibBtnAction == BTN_ACTION::DOWN && m_totalSteps != 0)
 		{
 			digitalWrite(STATE_LED_PIN, LOW);
 			waitingForPassengers = false; // Start running immediately
@@ -87,54 +87,57 @@ void TBElevator::Tick(const unsigned long& millis, BTN_ACTION CurCalibBtnAction)
 		// User presses the calibration button
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
-			elevSteps = curStep = 0;
+			m_totalSteps = m_curStep = 0;
+			savedTime = micros;
 			SetState(ELEV_STATE::CALIBRATION_IN_PROGRESS);
 		}
 		break;
 	case ELEV_STATE::CALIBRATION_IN_PROGRESS:
-		if (millis - ledBlinkTimestamp > LED_BLINK_SPEED)
-		{
-			ledState = !ledState;
-			ledBlinkTimestamp = millis;
-			digitalWrite(STATE_LED_PIN, ledState);
-		}
-
-		// Start moving up and count steps
-		if (tryMove(false))
-		{
-			elevSteps++;
-		}
-
 		// User presses calibration button
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
-			curStep = elevSteps;
-			moveDown = true;
+			m_curStep = m_totalSteps;
+			m_moveDown = true;
 			waitingForPassengers = false;
 			digitalWrite(STATE_LED_PIN, LOW);
 			SetState(ELEV_STATE::RUNNING);
+		}
+		else
+		{
+			if (micros - ledBlinkTimestamp > LED_BLINK_SPEED)
+			{
+				ledState = !ledState;
+				ledBlinkTimestamp = micros;
+				digitalWrite(STATE_LED_PIN, ledState);
+			}
+
+			// Start moving up and count steps
+			if (tryMove(false, micros))
+			{
+				m_totalSteps++;
+			}
 		}
 		break;
 	case ELEV_STATE::RUNNING:
 
 		if (!waitingForPassengers)
 		{
-			if (tryMove(moveDown))
+			if (tryMove(m_moveDown, micros))
 			{
-				curStep--;
+				m_curStep--;
 			}
 		}
-		else if (millis - waitForPassengersTimestamp > WAIT_FOR_PASSENGERS_DURATION)
+		else if (micros - waitForPassengersTimestamp > WAIT_FOR_PASSENGERS_DURATION)
 		{
 			waitingForPassengers = false;
 		}
 
-		if (curStep == 0)
+		if (m_curStep == 0)
 		{
-			curStep = elevSteps;
-			moveDown = !moveDown;
+			m_curStep = m_totalSteps;
+			m_moveDown = !m_moveDown;
 			waitingForPassengers = true;
-			waitForPassengersTimestamp = millis;
+			waitForPassengersTimestamp = micros;
 		}
 
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)

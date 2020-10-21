@@ -20,18 +20,37 @@ class TBElevator
 public:
 	TBElevator();
 
-	ELEV_STATE GetState() 
+	long MOTOR_STEP_INTERVAL = 1200; // microseconds
+	const long WAIT_FOR_PASSENGERS_DURATION = 5000; // ms
+
+	ELEV_STATE& GetState() 
 	{
 		return m_currentState;
+	}
+	int& GetSteps()
+	{
+		return m_totalSteps;
+	}
+	int& GetCurStep()
+	{
+		return m_curStep;
+	}
+	bool IsMovingDown()
+	{
+		return m_currentState == ELEV_STATE::RUNNING && m_moveDown;
+	}
+	bool IsMovingUp()
+	{
+		return m_currentState == ELEV_STATE::RUNNING && !m_moveDown;
 	}
 
 	void SetState(ELEV_STATE state);
 	void Tick(const unsigned long& millis, BTN_ACTION CurCalibBtnAction);
+private:
 
 	void phase8(bool isClockwise);
-	bool tryMove(bool down);
+	bool tryMove(bool down, const unsigned long& micros);
 
-private:
 	//+++++++++++ Variables +++++++++++++++
 	// Track current stepper phase by index
 	int phaseIndex = 0;
@@ -48,20 +67,17 @@ private:
 
 
 	ELEV_STATE m_currentState;
+	int m_totalSteps;
 
 	bool rotateDirection = true;
 	long savedTime;
 	long timeNow;
-	long timeInterval = 1200;
 
 	bool waitingForPassengers = false;
-	const long WAIT_FOR_PASSENGERS_DURATION = 5000; // ms
 	long waitForPassengersTimestamp;
-
-	int elevSteps = 0;
-	int curStep = 0;
-	bool moveDown;
+	int m_curStep = 0;
+	bool m_moveDown;
 	int ledState;
 	long ledBlinkTimestamp = 0;
-	const long LED_BLINK_SPEED = 500; // ms
+	const long LED_BLINK_SPEED = 500000; // microseconds
 };
