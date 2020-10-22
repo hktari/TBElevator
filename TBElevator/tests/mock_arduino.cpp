@@ -20,6 +20,10 @@
 
 #include <sys/timeb.h>
 #include "..\ArduinoProxy.h"
+#include <stdexcept>
+
+const int DIGITAL_PIN_COUNT = 12; // 0 - 11
+unsigned int digitalPinValues[DIGITAL_PIN_COUNT];
 
 timeb t_start;
 void SetPortD(unsigned int val)
@@ -42,11 +46,24 @@ void pinMode(unsigned int pin, unsigned int mode)
 }
 void digitalWrite(unsigned int pin, unsigned int val)
 {
+  if(pin < 0 || pin > DIGITAL_PIN_COUNT - 1)
+  {
+    throw std::invalid_argument("digital pin out of bounds trying to write");
+  }
+
+  digitalPinValues[pin] = val;
 }
+
 int digitalRead(unsigned int pin)
 {
-	return 0;
+  if(pin < 0 || pin > DIGITAL_PIN_COUNT - 1)
+  {
+    throw std::invalid_argument("digital pin out of bounds trying to write");
+  }
+
+  return digitalPinValues[pin];
 }
+
 unsigned long millis() {
   timeb t_now;
   ftime(&t_now);
