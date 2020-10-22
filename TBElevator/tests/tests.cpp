@@ -144,3 +144,15 @@ TEST_CASE("Elevator goes into running when button is pressed in idle and calibra
 	REQUIRE(elev.GetState() == ELEV_STATE::RUNNING);
 }
 
+TEST_CASE("Elevator calibration LED blinking")
+{
+	initialize_mock_arduino();
+	TBElevator elev;
+	reset_time(elev.MOTOR_STEP_INTERVAL);
+	
+	elev.Tick(advance_time(), BTN_ACTION::LONG_PRESS);
+
+	REQUIRE(digitalRead(elev.STATE_LED_PIN) == HIGH);
+
+}
+
