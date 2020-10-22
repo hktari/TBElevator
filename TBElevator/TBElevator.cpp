@@ -1,9 +1,6 @@
 #include "TBElevator.h"
 #include "ArduinoProxy.h"
 
-const int CALIB_BTN_PIN = 13;
-const int STATE_LED_PIN = 11;
-
 TBElevator::TBElevator()
 	: m_currentState(ELEV_STATE::IDLE), savedTime(0), ledState(LOW)
 {
@@ -76,7 +73,7 @@ void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 		if (CurCalibBtnAction == BTN_ACTION::DOWN && m_totalSteps != 0)
 		{
 			digitalWrite(STATE_LED_PIN, LOW);
-			waitingForPassengers = false; // Start running immediately
+			m_isWaitingForPassengers = false; // Start running immediately
 			SetState(ELEV_STATE::RUNNING);
 		}
 		break;
@@ -98,7 +95,7 @@ void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 		{
 			m_curStep = m_totalSteps;
 			m_moveDown = true;
-			waitingForPassengers = false;
+			m_isWaitingForPassengers = false;
 			digitalWrite(STATE_LED_PIN, LOW);
 			SetState(ELEV_STATE::RUNNING);
 		}
@@ -120,7 +117,7 @@ void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 		break;
 	case ELEV_STATE::RUNNING:
 
-		if (!waitingForPassengers)
+		if (!m_isWaitingForPassengers)
 		{
 			if (tryMove(m_moveDown, micros))
 			{
@@ -129,14 +126,14 @@ void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 		}
 		else if (micros - waitForPassengersTimestamp > WAIT_FOR_PASSENGERS_DURATION)
 		{
-			waitingForPassengers = false;
+			m_isWaitingForPassengers = false;
 		}
 
 		if (m_curStep == 0)
 		{
 			m_curStep = m_totalSteps;
 			m_moveDown = !m_moveDown;
-			waitingForPassengers = true;
+			m_isWaitingForPassengers = true;
 			waitForPassengersTimestamp = micros;
 		}
 
