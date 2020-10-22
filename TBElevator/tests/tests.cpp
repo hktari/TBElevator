@@ -10,7 +10,7 @@ unsigned long time_interval;
 void reset_time(unsigned long set_time_interval)
 {
 	time_interval = set_time_interval;
-	sim_time = 0;
+	sim_time = micros();
 }
 
 unsigned long advance_time(unsigned long alt_time_interval = 0L)
@@ -144,15 +144,33 @@ TEST_CASE("Elevator goes into running when button is pressed in idle and calibra
 	REQUIRE(elev.GetState() == ELEV_STATE::RUNNING);
 }
 
-TEST_CASE("Elevator calibration LED blinking")
+TEST_CASE("Elevator calibration started LED ON")
+{
+	initialize_mock_arduino();
+	TBElevator elev;
+	reset_time(elev.MOTOR_STEP_INTERVAL);
+	
+	REQUIRE(digitalRead(elev.STATE_LED_PIN) == LOW);
+	
+	elev.Tick(advance_time(), BTN_ACTION::LONG_PRESS);
+
+	REQUIRE(digitalRead(elev.STATE_LED_PIN) == HIGH);
+}
+
+TEST_CASE("Elevator calibration in progress LED blinking")
 {
 	initialize_mock_arduino();
 	TBElevator elev;
 	reset_time(elev.MOTOR_STEP_INTERVAL);
 	
 	elev.Tick(advance_time(), BTN_ACTION::LONG_PRESS);
-
-	REQUIRE(digitalRead(elev.STATE_LED_PIN) == HIGH);
-
+	elev.Tick(advance_time(), BTN_ACTION::DOWN);
+	
+	for(int i = 0; i < 10; i++)
+	{
+		elev.Tick(advance_time(elev.LED_BLINK_SPEED), BTN_ACTION::NONE);
+		REQUIRE(digitalRead(elev.STATE_LED_PIN) == LOW);
+		elev.Tick(advance_time(elev.LED_BLINK_SPEED), BTN_ACTION::NONE);
+		REQUIRE(digitalRead(elev.STATE_LED_PIN) == HIGH);
+	}
 }
-

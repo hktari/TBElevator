@@ -1,5 +1,7 @@
 #pragma once
 
+#define DEFAULT_TIME 0UL
+
 enum class ELEV_STATE
 {
 	IDLE,
@@ -56,6 +58,7 @@ public:
 	void Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction);
 private:
 
+	void SetLED(unsigned int state);
 	void phase8(bool isClockwise);
 	bool tryMove(bool down, const unsigned long& micros);
 
@@ -78,13 +81,13 @@ private:
 	int m_totalSteps;
 
 	bool rotateDirection = true;
-	unsigned long savedTime;
-	unsigned long timeNow;
+	unsigned long savedTime = DEFAULT_TIME;
+	unsigned long timeNow = DEFAULT_TIME;
 
 	bool m_isWaitingForPassengers = false;
-	unsigned long waitForPassengersTimestamp;
+	unsigned long waitForPassengersTimestamp = DEFAULT_TIME;
 	int m_curStep = 0;
 	bool m_moveDown;
 	int ledState;
-	unsigned long ledBlinkTimestamp = 0;
+	unsigned long ledBlinkTimestamp = DEFAULT_TIME;
 };

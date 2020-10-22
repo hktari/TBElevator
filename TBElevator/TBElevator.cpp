@@ -2,7 +2,7 @@
 #include "ArduinoProxy.h"
 
 TBElevator::TBElevator()
-	: m_currentState(ELEV_STATE::IDLE), savedTime(0), ledState(LOW)
+	: m_currentState(ELEV_STATE::IDLE), ledState(LOW), savedTime(micros()), ledBlinkTimestamp(micros()), waitForPassengersTimestamp(micros())
 {
 	// Set stepper pins to output
 	SetDDRD(GetDDRD() | STEPPERPORT);
@@ -59,6 +59,12 @@ void TBElevator::SetState(ELEV_STATE state)
 	m_currentState = state;
 }
 
+void TBElevator::SetLED(unsigned int state)
+{
+	ledState = state;
+	digitalWrite(STATE_LED_PIN, state);
+}
+
 void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 {
 	//BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE; // FIX THIS
@@ -72,14 +78,14 @@ void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 	case ELEV_STATE::IDLE:
 		if (CurCalibBtnAction == BTN_ACTION::DOWN && m_totalSteps != 0)
 		{
-			digitalWrite(STATE_LED_PIN, LOW);
+			SetLED(LOW);
 			m_isWaitingForPassengers = false; // Start running immediately
 			SetState(ELEV_STATE::RUNNING);
 		}
 		break;
 	case ELEV_STATE::CALIBRATION_STARTED:
 		// Set LED high
-		digitalWrite(STATE_LED_PIN, HIGH);
+		SetLED(HIGH);
 		// User lowers the lift to the ground and creates tension in the wire
 		// User presses the calibration button
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
@@ -96,16 +102,15 @@ void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 			m_curStep = m_totalSteps;
 			m_moveDown = true;
 			m_isWaitingForPassengers = false;
-			digitalWrite(STATE_LED_PIN, LOW);
+			SetLED(LOW);
 			SetState(ELEV_STATE::RUNNING);
 		}
 		else
 		{
-			if (micros - ledBlinkTimestamp > LED_BLINK_SPEED)
+			if (micros - ledBlinkTimestamp >= LED_BLINK_SPEED)
 			{
-				ledState = !ledState;
 				ledBlinkTimestamp = micros;
-				digitalWrite(STATE_LED_PIN, ledState);
+				SetLED(!ledState);
 			}
 
 			// Start moving up and count steps
