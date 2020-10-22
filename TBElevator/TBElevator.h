@@ -20,9 +20,9 @@ class TBElevator
 public:
 	TBElevator();
 
-	long MOTOR_STEP_INTERVAL = 1200; // microseconds
-	const long WAIT_FOR_PASSENGERS_DURATION = 5E6; // microseconds
-	const long LED_BLINK_SPEED = 500000; // microseconds
+	unsigned long MOTOR_STEP_INTERVAL = 1200; // microseconds
+	const unsigned long WAIT_FOR_PASSENGERS_DURATION = 5E6; // microseconds
+	const unsigned long LED_BLINK_SPEED = 500000; // microseconds
 
 	static const int CALIB_BTN_PIN = 13;
 	static const int STATE_LED_PIN = 11;
@@ -41,11 +41,11 @@ public:
 	}
 	bool IsMovingDown()
 	{
-		return m_currentState == ELEV_STATE::RUNNING && m_moveDown;
+		return m_currentState == ELEV_STATE::RUNNING && m_moveDown && !IsWaitingForPassengers();
 	}
 	bool IsMovingUp()
 	{
-		return m_currentState == ELEV_STATE::RUNNING && !m_moveDown;
+		return m_currentState == ELEV_STATE::RUNNING && !m_moveDown && !IsWaitingForPassengers();
 	}
 	bool IsWaitingForPassengers()
 	{
@@ -53,7 +53,7 @@ public:
 	}
 
 	void SetState(ELEV_STATE state);
-	void Tick(const unsigned long& millis, BTN_ACTION CurCalibBtnAction);
+	void Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction);
 private:
 
 	void phase8(bool isClockwise);

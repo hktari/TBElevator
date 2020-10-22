@@ -1,6 +1,7 @@
 #include "..\ArduinoProxy.h"
 #include "..\TBElevator.h"
 #include "lib/catch.hpp"
+#include <iostream>
 
 // ********** HELPER METHODS *************
 //
@@ -75,7 +76,7 @@ TEST_CASE("Elevator waits for passengers after reaching bottom")
 	REQUIRE(elev.IsWaitingForPassengers());
 }
 
-TEST_CASE("Elevator goes back up after reaching bottom")
+TEST_CASE("Elevator goes back up after reaching bottom and waiting for passengers")
 {
 	initialize_mock_arduino();
 	TBElevator elev;
@@ -84,10 +85,11 @@ TEST_CASE("Elevator goes back up after reaching bottom")
 
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
+	elev.Tick(advance_time(elev.WAIT_FOR_PASSENGERS_DURATION), BTN_ACTION::NONE);
 	REQUIRE(elev.IsMovingUp());
 }
 
-TEST_CASE("Elevator goes back down after reaching top")
+TEST_CASE("Elevator goes back down after reaching top and waiting for passengers")
 {
 	initialize_mock_arduino();
 	TBElevator elev;
@@ -96,26 +98,48 @@ TEST_CASE("Elevator goes back down after reaching top")
 
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
-	
+
 	elev.Tick(advance_time(elev.WAIT_FOR_PASSENGERS_DURATION), BTN_ACTION::NONE);
 	
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
+	
+	elev.Tick(advance_time(elev.WAIT_FOR_PASSENGERS_DURATION), BTN_ACTION::NONE);
+
 	REQUIRE(elev.IsMovingDown());
 }
 
 TEST_CASE("Elevator stays in idle when button is pressed and calibration hasn't occured yet")
 {
-
+	initialize_mock_arduino();
+	TBElevator elev;
+	reset_time(elev.MOTOR_STEP_INTERVAL);
+	
+	elev.Tick(advance_time(), BTN_ACTION::DOWN);
+	REQUIRE(elev.GetState() == ELEV_STATE::IDLE);
 }
 
 TEST_CASE("Elevator goes into idle when button is pressed in running")
 {
+	initialize_mock_arduino();
+	TBElevator elev;
+	reset_time(elev.MOTOR_STEP_INTERVAL);
+	calibrate_elev(elev, 2);
 
+	elev.Tick(advance_time(), BTN_ACTION::DOWN);
+	REQUIRE(elev.GetState() == ELEV_STATE::IDLE);
 }
 
 TEST_CASE("Elevator goes into running when button is pressed in idle and calibrated")
 {
+	initialize_mock_arduino();
+	TBElevator elev;
+	reset_time(elev.MOTOR_STEP_INTERVAL);
+	calibrate_elev(elev, 2);
 
+	elev.Tick(advance_time(), BTN_ACTION::DOWN);
+	elev.Tick(advance_time(), BTN_ACTION::DOWN);
+	
+	REQUIRE(elev.GetState() == ELEV_STATE::RUNNING);
 }
 

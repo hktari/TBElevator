@@ -124,7 +124,7 @@ void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 				m_curStep--;
 			}
 		}
-		else if (micros - waitForPassengersTimestamp > WAIT_FOR_PASSENGERS_DURATION)
+		else if (micros - waitForPassengersTimestamp >= WAIT_FOR_PASSENGERS_DURATION)
 		{
 			m_isWaitingForPassengers = false;
 		}
