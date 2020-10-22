@@ -32,7 +32,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
  */
-
+#include "Arduino.h"
 #include "TBElevator.h"
 //
 //enum class ELEV_STATE
@@ -114,7 +114,7 @@ void setup() {
 
 void loop() {
 	HandleCalibBtn();
-	elevator.Tick(millis(), CurCalibBtnAction);
+	elevator.Tick(micros(), CurCalibBtnAction);
 	
 
 

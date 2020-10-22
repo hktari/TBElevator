@@ -21,7 +21,11 @@ public:
 	TBElevator();
 
 	long MOTOR_STEP_INTERVAL = 1200; // microseconds
-	const long WAIT_FOR_PASSENGERS_DURATION = 5000; // ms
+	const long WAIT_FOR_PASSENGERS_DURATION = 5E6; // microseconds
+	const long LED_BLINK_SPEED = 500000; // microseconds
+
+	static const int CALIB_BTN_PIN = 13;
+	static const int STATE_LED_PIN = 11;
 
 	ELEV_STATE& GetState() 
 	{
@@ -42,6 +46,10 @@ public:
 	bool IsMovingUp()
 	{
 		return m_currentState == ELEV_STATE::RUNNING && !m_moveDown;
+	}
+	bool IsWaitingForPassengers()
+	{
+		return m_isWaitingForPassengers;
 	}
 
 	void SetState(ELEV_STATE state);
@@ -70,14 +78,13 @@ private:
 	int m_totalSteps;
 
 	bool rotateDirection = true;
-	long savedTime;
-	long timeNow;
+	unsigned long savedTime;
+	unsigned long timeNow;
 
-	bool waitingForPassengers = false;
-	long waitForPassengersTimestamp;
+	bool m_isWaitingForPassengers = false;
+	unsigned long waitForPassengersTimestamp;
 	int m_curStep = 0;
 	bool m_moveDown;
 	int ledState;
-	long ledBlinkTimestamp = 0;
-	const long LED_BLINK_SPEED = 500000; // microseconds
+	unsigned long ledBlinkTimestamp = 0;
 };
