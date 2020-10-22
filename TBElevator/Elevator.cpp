@@ -1,4 +1,5 @@
-#include "TBElevator.h"
+#include "Elevator.h"
+#include <Arduino.h>
 #include "ArduinoProxy.h"
 
 TBElevator::TBElevator()

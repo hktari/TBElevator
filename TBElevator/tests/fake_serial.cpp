@@ -17,40 +17,40 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.  
 */
-
-#include <cstring>
-#include <iostream>
-#include <iomanip>
-
-#include "..\fake_serial.h"
-
-void FakeSerial::begin(unsigned long speed) {
-  return;
-}
-
-void FakeSerial::end() {
-  return;
-}
-
-unsigned long long FakeSerial::write( const unsigned char buf[], unsigned long long size ) {
-  using namespace std;
-  ios_base::fmtflags oldFlags = cout.flags();
-  streamsize oldPrec = cout.precision();
-  char oldFill = cout.fill();
-  
-  cout << "Serial::write: ";
-  cout << internal << setfill('0');
-
-  for( unsigned int i = 0; i < size; i++ ){
-    cout << setw(2) << hex << (unsigned int)buf[i] << " ";
-  }
-  cout << endl;
-  
-  cout.flags(oldFlags);
-  cout.precision(oldPrec);
-  cout.fill(oldFill);
-
-  return size;
-}
-
-FakeSerial Serial;
+//
+//#include <cstring>
+//#include <iostream>
+//#include <iomanip>
+//
+//#include "..\fake_serial.h"
+//
+//void FakeSerial::begin(unsigned long speed) {
+//  return;
+//}
+//
+//void FakeSerial::end() {
+//  return;
+//}
+//
+//unsigned long long FakeSerial::write( const unsigned char buf[], unsigned long long size ) {
+//  using namespace std;
+//  ios_base::fmtflags oldFlags = cout.flags();
+//  streamsize oldPrec = cout.precision();
+//  char oldFill = cout.fill();
+//  
+//  cout << "Serial::write: ";
+//  cout << internal << setfill('0');
+//
+//  for( unsigned int i = 0; i < size; i++ ){
+//    cout << setw(2) << hex << (unsigned int)buf[i] << " ";
+//  }
+//  cout << endl;
+//  
+//  cout.flags(oldFlags);
+//  cout.precision(oldPrec);
+//  cout.fill(oldFill);
+//
+//  return size;
+//}
+//
+//FakeSerial Serial;

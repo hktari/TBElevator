@@ -20,21 +20,18 @@
 #pragma once
 //#include <cstdint>
 
-#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+static unsigned int _portD;
+
+#ifndef Arduino_h
+
+typedef unsigned char byte;
+typedef unsigned short int word;
+
+#define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 #define lowByte(w) ((unsigned char) ((w) & 0xff))
 #define highByte(w) ((unsigned char) ((w) >> 8))
 #define HIGH 0x1
 #define LOW  0x0
-
-static unsigned int _portD;
-void SetPortD(unsigned int val);
-unsigned int GetPortD();
-
-void SetDDRD(unsigned int val);
-unsigned int GetDDRD();
-
-typedef unsigned char byte;
-typedef unsigned short int word;
 
 void pinMode(unsigned int pin, unsigned int mode);
 void digitalWrite(unsigned int pin, unsigned int val);
@@ -43,10 +40,17 @@ unsigned long millis();
 unsigned long micros();
 void delay(unsigned long ms);
 unsigned long millis();
+#endif // !ARDUINO_H
+
+void SetPortD(unsigned int val);
+unsigned int GetPortD();
+
+void SetDDRD(unsigned int val);
+unsigned int GetDDRD();
 
 // WMath.cpp
 long map(long, long, long, long, long);
 
 void initialize_mock_arduino(); 
 
-#include "fake_serial.h"
+//#include "fake_serial.h"

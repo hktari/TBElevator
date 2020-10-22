@@ -20,13 +20,13 @@
 
 // TODO: RENAME TO SerialProxy.h
 
-#pragma once
-
-class FakeSerial {
-public:
-  void begin(unsigned long);
-  void end();
-  unsigned long long write(const unsigned char*, unsigned long long);
-};
-
-extern FakeSerial Serial;
+//#pragma once
+//
+//class FakeSerial {
+//public:
+//  void begin(unsigned long);
+//  void end();
+//  unsigned long long write(const unsigned char*, unsigned long long);
+//};
+//
+//extern FakeSerial Serial;

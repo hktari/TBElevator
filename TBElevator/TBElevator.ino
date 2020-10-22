@@ -32,23 +32,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
  */
-#include "Arduino.h"
-#include "TBElevator.h"
-//
-//enum class ELEV_STATE
-//{
-//	IDLE,
-//	CALIBRATION_STARTED,
-//	CALIBRATION_IN_PROGRESS,
-//	RUNNING,
-//};
-//enum class BTN_ACTION
-//{
-//	NONE = 0,
-//	DOWN = 1,
-//	UP = 2,
-//	LONG_PRESS = 3
-//};
+
+#include <Arduino.h>
+#include "Elevator.h"
+ //
+ //enum class ELEV_STATE
+ //{
+ //	IDLE,
+ //	CALIBRATION_STARTED,
+ //	CALIBRATION_IN_PROGRESS,
+ //	RUNNING,
+ //};
+ //enum class BTN_ACTION
+ //{
+ //	NONE = 0,
+ //	DOWN = 1,
+ //	UP = 2,
+ //	LONG_PRESS = 3
+ //};
 
 void HandleCalibBtn();/*
 bool tryMove(bool down);
@@ -115,7 +116,7 @@ void setup() {
 void loop() {
 	HandleCalibBtn();
 	elevator.Tick(micros(), CurCalibBtnAction);
-	
+
 
 
 	//turn90();
