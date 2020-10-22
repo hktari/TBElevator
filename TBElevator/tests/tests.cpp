@@ -174,3 +174,16 @@ TEST_CASE("Elevator calibration in progress LED blinking")
 		REQUIRE(digitalRead(elev.STATE_LED_PIN) == HIGH);
 	}
 }
+
+TEST_CASE("Elevator running LED is off")
+{
+	initialize_mock_arduino();
+	TBElevator elev;
+	reset_time(elev.MOTOR_STEP_INTERVAL);
+	calibrate_elev(elev, 2);
+
+	for(int i = 0; i < 10; i++)
+	{
+		REQUIRE(digitalRead(elev.STATE_LED_PIN) == LOW);
+	}
+}
