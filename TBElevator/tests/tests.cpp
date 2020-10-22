@@ -26,7 +26,7 @@ unsigned long advance_time(unsigned long alt_time_interval = 0L)
 
 	return sim_time;
 }
-void calibrate_elev(TBElevator& elev, int steps)
+void calibrate_and_run_elev(TBElevator& elev, int steps)
 {
 	elev.Tick(advance_time(), BTN_ACTION::LONG_PRESS);
 	elev.Tick(advance_time(), BTN_ACTION::DOWN);
@@ -69,7 +69,7 @@ TEST_CASE("Elevator waits for passengers after reaching bottom")
 	initialize_mock_arduino();
 	TBElevator elev;
 	reset_time(elev.MOTOR_STEP_INTERVAL);
-	calibrate_elev(elev, 2);
+	calibrate_and_run_elev(elev, 2);
 
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
@@ -82,7 +82,7 @@ TEST_CASE("Elevator goes back up after reaching bottom and waiting for passenger
 	initialize_mock_arduino();
 	TBElevator elev;
 	reset_time(elev.MOTOR_STEP_INTERVAL);
-	calibrate_elev(elev, 2);
+	calibrate_and_run_elev(elev, 2);
 
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
@@ -95,7 +95,7 @@ TEST_CASE("Elevator goes back down after reaching top and waiting for passengers
 	initialize_mock_arduino();
 	TBElevator elev;
 	reset_time(elev.MOTOR_STEP_INTERVAL);
-	calibrate_elev(elev, 2);
+	calibrate_and_run_elev(elev, 2);
 
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
@@ -125,7 +125,7 @@ TEST_CASE("Elevator goes into idle when button is pressed in running")
 	initialize_mock_arduino();
 	TBElevator elev;
 	reset_time(elev.MOTOR_STEP_INTERVAL);
-	calibrate_elev(elev, 2);
+	calibrate_and_run_elev(elev, 2);
 
 	elev.Tick(advance_time(), BTN_ACTION::DOWN);
 	REQUIRE(elev.GetState() == ELEV_STATE::IDLE);
@@ -136,7 +136,7 @@ TEST_CASE("Elevator goes into running when button is pressed in idle and calibra
 	initialize_mock_arduino();
 	TBElevator elev;
 	reset_time(elev.MOTOR_STEP_INTERVAL);
-	calibrate_elev(elev, 2);
+	calibrate_and_run_elev(elev, 2);
 
 	elev.Tick(advance_time(), BTN_ACTION::DOWN);
 	elev.Tick(advance_time(), BTN_ACTION::DOWN);
@@ -180,7 +180,7 @@ TEST_CASE("Elevator running LED is off")
 	initialize_mock_arduino();
 	TBElevator elev;
 	reset_time(elev.MOTOR_STEP_INTERVAL);
-	calibrate_elev(elev, 2);
+	calibrate_and_run_elev(elev, 2);
 
 	for(int i = 0; i < 10; i++)
 	{
