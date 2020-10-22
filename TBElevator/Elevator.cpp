@@ -1,5 +1,7 @@
 #include "Elevator.h"
+#ifndef TEST_ENV
 #include <Arduino.h>
+#endif
 #include "ArduinoProxy.h"
 
 TBElevator::TBElevator()
