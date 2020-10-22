@@ -74,6 +74,7 @@ TEST_CASE("Elevator waits for passengers after reaching bottom")
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
 	REQUIRE(elev.IsWaitingForPassengers());
+	REQUIRE((elev.IsMovingDown() | elev.IsMovingUp()) == false);
 }
 
 TEST_CASE("Elevator goes back up after reaching bottom and waiting for passengers")
@@ -103,7 +104,7 @@ TEST_CASE("Elevator goes back down after reaching top and waiting for passengers
 	
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
 	elev.Tick(advance_time(), BTN_ACTION::NONE);
-	
+
 	elev.Tick(advance_time(elev.WAIT_FOR_PASSENGERS_DURATION), BTN_ACTION::NONE);
 
 	REQUIRE(elev.IsMovingDown());
