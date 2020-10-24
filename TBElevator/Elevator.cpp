@@ -4,52 +4,88 @@
 #endif
 #include "ArduinoProxy.h"
 
-TBElevator::TBElevator()
-	: m_currentState(ELEV_STATE::IDLE), ledState(LOW), savedTime(micros()), ledBlinkTimestamp(micros()), waitForPassengersTimestamp(micros())
+TBElevator::TBElevator(
+	unsigned int waitForPassengersSec, int ledPin, int switchPin,
+	unsigned int stepperMotorPort, unsigned long ledBlinkSpeedMillis, unsigned long motorStepIntervalMicros,
+	unsigned int serialMask)
+	: WAIT_FOR_PASSENGERS_DURATION(5 * 1E6), STATE_LED_PIN(ledPin), NIGHT_TIME_SWITCH_PIN(switchPin), STEPPER_PORT(stepperMotorPort),
+	  LED_BLINK_SPEED(ledBlinkSpeedMillis * 1000), MOTOR_STEP_INTERVAL(motorStepIntervalMicros), SERIAL_MASK(serialMask)
+{
+	init();
+}
+void TBElevator::init()
 {
 	// Set stepper pins to output
-	SetDDRD(GetDDRD() | STEPPERPORT);
+	SetDDRD(GetDDRD() | STEPPER_PORT);
+	pinMode(STATE_LED_PIN, OUTPUT);
+	m_currentState = ELEV_STATE::IDLE;
+	ledState = LOW;
+	savedTime = micros();
+	ledBlinkTimestamp = micros();
+	waitForPassengersTimestamp = micros();
 }
 
-void TBElevator::phase8(bool isClockwise) {
+void TBElevator::Pause()
+{
+	SetState(ELEV_STATE::IDLE);
+}
+void TBElevator::Unpause()
+{
+	if (m_totalSteps != 0)
+	{
+		SetState(ELEV_STATE::RUNNING);
+	}
+}
+
+void TBElevator::phase8(bool isClockwise)
+{
 	// Clear stepper pins
-	SetPortD(GetPortD() & SERIALMASK);
+	SetPortD(GetPortD() & SERIAL_MASK);
 
 	// Alter rotation direction
 	bool rotateDirection;
-	if (isClockwise == true) {
+	if (isClockwise == true)
+	{
 		rotateDirection = true;
 	}
-	else {
+	else
+	{
 		rotateDirection = false;
 	}
 
-	if (rotateDirection == true) {
+	if (rotateDirection == true)
+	{
 		// Output the next stepper phase - Clockwise
 		SetPortD(GetPortD() | STEPPERPHASES8[phaseIndex]);
-		if (phaseIndex == 7) {
+		if (phaseIndex == 7)
+		{
 			phaseIndex = 0;
 		}
-		else {
+		else
+		{
 			phaseIndex++;
 		}
 	}
-	else {
+	else
+	{
 		// Output the next stepper phase - Counter Clockwise
 		SetPortD(GetPortD() | STEPPERPHASES8[phaseIndex]);
-		if (phaseIndex == 0) {
+		if (phaseIndex == 0)
+		{
 			phaseIndex = 7;
 		}
-		else {
+		else
+		{
 			phaseIndex--;
 		}
 	}
 }
 
-bool TBElevator::tryMove(bool down, const unsigned long& micros)
+bool TBElevator::tryMove(bool down, const unsigned long &micros)
 {
 	timeNow = micros;
-	if (timeNow - savedTime >= MOTOR_STEP_INTERVAL) {
+	if (timeNow - savedTime >= MOTOR_STEP_INTERVAL)
+	{
 		phase8(down);
 		savedTime = micros;
 		return true;
@@ -68,10 +104,10 @@ void TBElevator::SetLED(unsigned int state)
 	digitalWrite(STATE_LED_PIN, state);
 }
 
-void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
+void TBElevator::Tick(const unsigned long &micros, BTN_ACTION CurCalibBtnAction)
 {
 	//BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE; // FIX THIS
-	if(CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
+	if (CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
 	{
 		m_currentState = ELEV_STATE::CALIBRATION_STARTED;
 	}
@@ -150,10 +186,8 @@ void TBElevator::Tick(const unsigned long& micros, BTN_ACTION CurCalibBtnAction)
 			SetState(ELEV_STATE::IDLE);
 
 			// Clear stepper pins
-			SetPortD(GetPortD() & SERIALMASK);
+			SetPortD(GetPortD() & SERIAL_MASK);
 		}
 		break;
 	}
-
 }
-

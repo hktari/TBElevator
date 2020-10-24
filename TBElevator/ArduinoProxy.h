@@ -33,6 +33,9 @@ typedef unsigned short int word;
 #define HIGH 0x1
 #define LOW  0x0
 
+#define INPUT 0x0
+#define OUTPUT 0x1
+
 void pinMode(unsigned int pin, unsigned int mode);
 void digitalWrite(unsigned int pin, unsigned int val);
 int digitalRead(unsigned int pin);

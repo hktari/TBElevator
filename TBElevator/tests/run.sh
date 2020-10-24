@@ -13,4 +13,3 @@ echo "Finished building"
 bin/test.exe
 
 echo "Finished running tests"
-read  -n 1

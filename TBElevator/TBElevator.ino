@@ -106,8 +106,8 @@ void SetState(ELEV_STATE state)
 }
 
 void setup() {
+	// TODO: move to elevator.cpp
 	pinMode(CALIB_BTN_PIN, INPUT);
-	pinMode(STATE_LED_PIN, OUTPUT);
 	Serial.begin(9600);
 	//elevator = TBElevator();
 	SetState(ELEV_STATE::IDLE);
