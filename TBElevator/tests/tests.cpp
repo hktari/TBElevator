@@ -188,4 +188,20 @@ TEST_CASE("Elevator running LED is off")
 	}
 }
 
-TEST_CASE("Elevator pauses when"){}
+TEST_CASE("Elevator pause / unpause")
+{
+	initialize_mock_arduino();
+	TBElevator elev;
+	reset_time(elev.MOTOR_STEP_INTERVAL);
+	calibrate_and_run_elev(elev, 2);
+
+	bool wasMovingDown = elev.IsMovingDown();
+	bool wasMovingUp = elev.IsMovingUp();
+	elev.Pause();
+	REQUIRE(elev.GetState() == ELEV_STATE::IDLE);
+
+	elev.Unpause();
+	REQUIRE(elev.GetState() == ELEV_STATE::RUNNING);
+	REQUIRE(wasMovingDown == elev.IsMovingDown());
+	REQUIRE(wasMovingUp == elev.IsMovingUp());
+}
