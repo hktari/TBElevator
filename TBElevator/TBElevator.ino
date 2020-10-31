@@ -27,6 +27,7 @@ const uint8_t SERIALMASK = 0x03;
 const uint8_t STEPPERPHASES8[8] = { 0x30, 0x20, 0x60, 0x40, 0xC0, 0x80, 0x90, 0x10 };
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+const unsigned long WAIT_FOR_PASSENGERS_DURATION = 5000; // milliseconds
 
 const int CALIB_BTN_PIN = 12;
 const int STATE_LED_PIN = 11;
@@ -47,6 +48,9 @@ int elevSteps = 0;
 int curStep = 0;
 bool moveDown;
 int ledState = LOW;
+
+bool m_isWaitingForPassengers = false;
+unsigned long waitForPassengersTimestamp = millis();
 
 //#region Forward declarations
 //enum class ELEV_STATE;
@@ -101,6 +105,8 @@ void phase8(bool isClockwise) {
 bool tryMove(bool down)
 {
 	timeNow = micros();
+
+	// TODO: fix overflow
 	if (timeNow - savedTime > timeInterval) {
 		phase8(down);
 		savedTime = micros();
@@ -135,6 +141,26 @@ void HandleCalibBtn()
 	prevCalibBtnState = calibBtnState;
 }
 
+void setLED(unsigned int state)
+{
+	ledState = state;
+	digitalWrite(STATE_LED_PIN, state);
+}
+
+void setDirection(bool down)
+{
+	moveDown = down;
+	curStep = elevSteps;
+	phaseIndex = 0;
+}
+
+
+void clearMotorPorts()
+{
+	// Clear stepper pins
+	PORTD = PORTD & SERIALMASK;
+}
+
 void setup() {
 	// Set stepper pins to output
 	DDRD = DDRD | STEPPERPORT;
@@ -158,30 +184,31 @@ void loop() {
 	case ELEV_STATE::IDLE:
 		if (CurCalibBtnAction == BTN_ACTION::DOWN && elevSteps != 0)
 		{
-			digitalWrite(STATE_LED_PIN, LOW);
+			setLED(LOW);
 			SetState(ELEV_STATE::RUNNING);
 		}
 		break;
 	case ELEV_STATE::CALIBRATION_STARTED:
 		// Set LED high
-		digitalWrite(STATE_LED_PIN, HIGH);
+		setLED(HIGH);
+
 		// User lowers the lift to the ground and creates tension in the wire
 		// User presses the calibration button
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
 			elevSteps = curStep = 0;
+			ledSavedTime = 0;
 			SetState(ELEV_STATE::CALIBRATION_IN_PROGRESS);
 		}
 		break;
 	case ELEV_STATE::CALIBRATION_IN_PROGRESS:
 
-		if (millis() - ledSavedTime > 30)
+		if (millis() - ledSavedTime > 3000)
 		{
-			ledState = !ledState;
+			setLED(!ledState);
 			ledSavedTime = millis();
 		}
 
-		digitalWrite(STATE_LED_PIN, ledState);
 		// Start moving up and count steps
 		if (tryMove(false))
 		{
@@ -191,34 +218,41 @@ void loop() {
 		// User presses calibration button
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
-			curStep = elevSteps;
-			moveDown = true;
+			m_isWaitingForPassengers = false;
+			setDirection(true);
+			setLED(LOW);
 			SetState(ELEV_STATE::RUNNING);
 		}
 		break;
 	case ELEV_STATE::RUNNING:
-		digitalWrite(STATE_LED_PIN, LOW);
-
-		if (tryMove(moveDown))
+		if (!m_isWaitingForPassengers)
 		{
-			curStep--;
+			if (tryMove(moveDown))
+			{
+				curStep--;
+			}
+		}
+		// TODO: fix overflow
+		else if (millis() - waitForPassengersTimestamp >= WAIT_FOR_PASSENGERS_DURATION)
+		{
+			m_isWaitingForPassengers = false;
 		}
 
 		if (curStep == 0)
 		{
-			curStep = elevSteps;
-			moveDown = !moveDown;
+			setDirection(!moveDown);
+			m_isWaitingForPassengers = true;
+			clearMotorPorts();
+			waitForPassengersTimestamp = millis();
 		}
 
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
 			SetState(ELEV_STATE::IDLE);
+			clearMotorPorts();
 		}
 		break;
 	}
-
-
-
 	//turn90();
 	//PORTD = PORTD & SERIALMASK;   
 	//delay(30);
