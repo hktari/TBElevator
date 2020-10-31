@@ -48,7 +48,7 @@ long ledSavedTime = millis();
 long lastCalibBtnDown = 0;
 bool longPressCondition = 0;
 int prevCalibBtnState = LOW;
-ELEV_STATE CurState = ELEV_STATE::IDLE;
+ELEV_STATE curState = ELEV_STATE::IDLE;
 BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE;
 
 int totalElevSteps = 0;
@@ -70,7 +70,7 @@ unsigned long waitForPassengersTimestamp = millis();
 void SetState(ELEV_STATE state)
 {
 	Serial.println((int)state);
-	CurState = state;
+	curState = state;
 }
 
 
@@ -167,6 +167,10 @@ void clearMotorPorts()
 	// Clear stepper pins
 	PORTD = PORTD & SERIALMASK;
 }
+bool nightTime()
+{
+	return digitalRead(NIGHT_TIME_SWITCH_PIN) == HIGH && analogRead(NIGHT_SENSOR_PIN) <= 70;
+}
 
 void setup() {
 	// Set stepper pins to output
@@ -179,40 +183,40 @@ void setup() {
 	SetState(ELEV_STATE::IDLE);
 }
 void loop() {
-	
-	if (digitalRead(NIGHT_TIME_SWITCH_PIN) == HIGH)
+
+	if (curState != ELEV_STATE::NIGHT_TIME)
 	{
-		if (analogRead(NIGHT_SENSOR_PIN) <= 70)
+		if (nightTime())
 		{
-			return;
+			clearMotorPorts();
+			SetState(ELEV_STATE::NIGHT_TIME);
 		}
-		// disable elevator
-		//SetState(ELEV_STATE::NIGHT_TIME);
-	}
-	
-	if (CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
-	{
-		SetState(ELEV_STATE::CALIBRATION_STARTED);
-	}
-
-	HandleCalibBtn();
-
-	if (CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
-	{
-		SetState(ELEV_STATE::CALIBRATION_STARTED);
-	}
-
-	switch (CurState)
-	{
-	/*case ELEV_STATE::NIGHT_TIME:
-		if (digitalRead(NIGHT_TIME_SWITCH_PIN) == LOW)
+		else
 		{
-			if (totalElevSteps)
+			HandleCalibBtn();
+
+			if (CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
+			{
+				SetState(ELEV_STATE::CALIBRATION_STARTED);
+			}
+		}
+	}
+
+	switch (curState)
+	{
+	case ELEV_STATE::NIGHT_TIME:
+		if (!nightTime())
+		{
+			if (totalElevSteps == 0)
 			{
 				SetState(ELEV_STATE::IDLE);
 			}
+			else
+			{
+				SetState(ELEV_STATE::RUNNING);
+			}
 		}
-		break;*/
+		break;
 	case ELEV_STATE::IDLE:
 		if (CurCalibBtnAction == BTN_ACTION::DOWN && totalElevSteps != 0)
 		{
