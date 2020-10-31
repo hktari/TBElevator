@@ -4,6 +4,7 @@ enum class ELEV_STATE
 	CALIBRATION_STARTED,
 	CALIBRATION_IN_PROGRESS,
 	RUNNING,
+	NIGHT_TIME
 };
 enum class  BTN_ACTION
 {
@@ -34,6 +35,10 @@ const unsigned long TRIGGER_CALIBRATION_DURATION = 3000; // millis
 const int CALIB_BTN_PIN = 12;
 const int STATE_LED_PIN = 11;
 
+
+const uint8_t NIGHT_TIME_SWITCH_PIN = A2;
+const uint8_t NIGHT_SENSOR_PIN = A0;
+
 long timeNow;
 long timeInterval = 1200;
 bool rotateDirection = true;
@@ -46,7 +51,7 @@ int prevCalibBtnState = LOW;
 ELEV_STATE CurState = ELEV_STATE::IDLE;
 BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE;
 
-int elevSteps = 0;
+int totalElevSteps = 0;
 int curStep = 0;
 bool moveDown;
 int ledState = LOW;
@@ -152,7 +157,7 @@ void setLED(unsigned int state)
 void setDirection(bool down)
 {
 	moveDown = down;
-	curStep = elevSteps;
+	curStep = totalElevSteps;
 	phaseIndex = 0;
 }
 
@@ -168,12 +173,28 @@ void setup() {
 	DDRD = DDRD | STEPPERPORT;
 	pinMode(CALIB_BTN_PIN, INPUT);
 	pinMode(STATE_LED_PIN, OUTPUT);
+	pinMode(NIGHT_TIME_SWITCH_PIN, INPUT);
 	Serial.begin(9600);
 
 	SetState(ELEV_STATE::IDLE);
 }
-
 void loop() {
+	
+	if (digitalRead(NIGHT_TIME_SWITCH_PIN) == HIGH)
+	{
+		if (analogRead(NIGHT_SENSOR_PIN) <= 70)
+		{
+			return;
+		}
+		// disable elevator
+		//SetState(ELEV_STATE::NIGHT_TIME);
+	}
+	
+	if (CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
+	{
+		SetState(ELEV_STATE::CALIBRATION_STARTED);
+	}
+
 	HandleCalibBtn();
 
 	if (CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
@@ -183,8 +204,17 @@ void loop() {
 
 	switch (CurState)
 	{
+	/*case ELEV_STATE::NIGHT_TIME:
+		if (digitalRead(NIGHT_TIME_SWITCH_PIN) == LOW)
+		{
+			if (totalElevSteps)
+			{
+				SetState(ELEV_STATE::IDLE);
+			}
+		}
+		break;*/
 	case ELEV_STATE::IDLE:
-		if (CurCalibBtnAction == BTN_ACTION::DOWN && elevSteps != 0)
+		if (CurCalibBtnAction == BTN_ACTION::DOWN && totalElevSteps != 0)
 		{
 			setLED(LOW);
 			SetState(ELEV_STATE::RUNNING);
@@ -198,7 +228,7 @@ void loop() {
 		// User presses the calibration button
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
-			elevSteps = curStep = 0;
+			totalElevSteps = curStep = 0;
 			ledSavedTime = 0;
 			SetState(ELEV_STATE::CALIBRATION_IN_PROGRESS);
 		}
@@ -214,7 +244,7 @@ void loop() {
 		// Start moving up and count steps
 		if (tryMove(false))
 		{
-			elevSteps++;
+			totalElevSteps++;
 		}
 
 		// User presses calibration button
