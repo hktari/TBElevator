@@ -28,6 +28,8 @@ const uint8_t STEPPERPHASES8[8] = { 0x30, 0x20, 0x60, 0x40, 0xC0, 0x80, 0x90, 0x
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 const unsigned long WAIT_FOR_PASSENGERS_DURATION = 5000; // milliseconds
+const unsigned long LED_BLINK_SPEED = 1500; // milliseconds
+const unsigned long TRIGGER_CALIBRATION_DURATION = 3000; // millis
 
 const int CALIB_BTN_PIN = 12;
 const int STATE_LED_PIN = 11;
@@ -132,7 +134,7 @@ void HandleCalibBtn()
 		longPressCondition = false;
 		CurCalibBtnAction = BTN_ACTION::UP;
 	}
-	else if (longPressCondition && (millis() - lastCalibBtnDown) > 3000)
+	else if (longPressCondition && (millis() - lastCalibBtnDown) > TRIGGER_CALIBRATION_DURATION)
 	{
 		CurCalibBtnAction = BTN_ACTION::LONG_PRESS;
 		longPressCondition = false;
@@ -203,7 +205,7 @@ void loop() {
 		break;
 	case ELEV_STATE::CALIBRATION_IN_PROGRESS:
 
-		if (millis() - ledSavedTime > 3000)
+		if (millis() - ledSavedTime > LED_BLINK_SPEED)
 		{
 			setLED(!ledState);
 			ledSavedTime = millis();
