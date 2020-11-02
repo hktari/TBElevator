@@ -1,10 +1,29 @@
+#include "LowPower.h"
+
 enum class ELEV_STATE
 {
+	/// <summary>
+	/// The elevator has been paused. Can only be swtiched to from RUNNING state
+	/// </summary>
 	IDLE,
+
+	/// <summary>
+	/// The initial state, the elevator has to be calibrated.
+	/// </summary>
 	CALIBRATION_STARTED,
+
 	CALIBRATION_IN_PROGRESS,
+
+	/// <summary>
+	/// The elevator has been calibrated and is moving up and down every x min. If night mode is off,
+	/// it checks the photoresistor before starting movement.
+	/// </summary>
 	RUNNING,
-	NIGHT_TIME
+
+	/// <summary>
+	/// Arduino goes into power down mode until the next ride is pending
+	/// </summary>
+	SLEEPING
 };
 enum class  BTN_ACTION
 {
@@ -43,12 +62,11 @@ long timeNow;
 long timeInterval = 1200;
 bool rotateDirection = true;
 long savedTime = micros();
-long ledSavedTime = millis();
 
 long lastCalibBtnDown = 0;
 bool longPressCondition = 0;
 int prevCalibBtnState = LOW;
-ELEV_STATE curState = ELEV_STATE::IDLE;
+ELEV_STATE curState = ELEV_STATE::CALIBRATION_STARTED;
 BTN_ACTION CurCalibBtnAction = BTN_ACTION::NONE;
 
 int totalElevSteps = 0;
@@ -58,6 +76,8 @@ int ledState = LOW;
 
 bool m_isWaitingForPassengers = false;
 unsigned long waitForPassengersTimestamp = millis();
+
+unsigned long prevMillis, nowMillis = 0;
 
 //#region Forward declarations
 //enum class ELEV_STATE;
@@ -172,55 +192,61 @@ bool nightTime()
 	return digitalRead(NIGHT_TIME_SWITCH_PIN) == HIGH && analogRead(NIGHT_SENSOR_PIN) <= 70;
 }
 
+void blinkLED(const unsigned long& blinkSpeed = LED_BLINK_SPEED)
+{
+	static unsigned long ledTimer = 0;
+	ledTimer += nowMillis - prevMillis;
+	if (ledTimer >= blinkSpeed)
+	{
+		ledTimer = 0;
+		setLED(!ledState);
+	}
+}
+
 void setup() {
 	// Set stepper pins to output
 	DDRD = DDRD | STEPPERPORT;
 	pinMode(CALIB_BTN_PIN, INPUT);
 	pinMode(STATE_LED_PIN, OUTPUT);
+	//pinMode(NIGHT_SENSOR_PIN, INPUT);
 	pinMode(NIGHT_TIME_SWITCH_PIN, INPUT);
 	Serial.begin(9600);
 
-	SetState(ELEV_STATE::IDLE);
+	Serial.println();
+	SetState(ELEV_STATE::CALIBRATION_STARTED);
 }
+
 void loop() {
+	nowMillis = millis();
 
-	if (curState != ELEV_STATE::NIGHT_TIME)
-	{
-		if (nightTime())
-		{
-			clearMotorPorts();
-			SetState(ELEV_STATE::NIGHT_TIME);
-		}
-		else
-		{
-			HandleCalibBtn();
+	static unsigned long elev_timer = 0;
+	const unsigned long ELEVATOR_RUN_INTERVAL = 720000; // 12 min
+	//const unsigned long ELEVATOR_RUN_INTERVAL = 10000; // 12 min
+	HandleCalibBtn();
 
-			if (CurCalibBtnAction == BTN_ACTION::LONG_PRESS)
-			{
-				SetState(ELEV_STATE::CALIBRATION_STARTED);
-			}
-		}
-	}
+	//Serial.println((int)curState);
 
 	switch (curState)
 	{
-	case ELEV_STATE::NIGHT_TIME:
-		if (!nightTime())
+	case ELEV_STATE::SLEEPING:
+		elev_timer += nowMillis - prevMillis;
+
+		if (elev_timer >= ELEVATOR_RUN_INTERVAL)
 		{
-			if (totalElevSteps == 0)
-			{
-				SetState(ELEV_STATE::IDLE);
-			}
-			else
-			{
-				SetState(ELEV_STATE::RUNNING);
-			}
+			setLED(LOW);
+			SetState(ELEV_STATE::RUNNING);
+		}
+		else
+		{
+			Serial.println("goign to sleep");
+			Serial.flush();
+			LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+			elev_timer += 8000; // account for clock not running while power down;
 		}
 		break;
 	case ELEV_STATE::IDLE:
 		if (CurCalibBtnAction == BTN_ACTION::DOWN && totalElevSteps != 0)
 		{
-			setLED(LOW);
 			SetState(ELEV_STATE::RUNNING);
 		}
 		break;
@@ -233,17 +259,12 @@ void loop() {
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
 			totalElevSteps = curStep = 0;
-			ledSavedTime = 0;
+			setLED(LOW);
 			SetState(ELEV_STATE::CALIBRATION_IN_PROGRESS);
 		}
 		break;
 	case ELEV_STATE::CALIBRATION_IN_PROGRESS:
-
-		if (millis() - ledSavedTime > LED_BLINK_SPEED)
-		{
-			setLED(!ledState);
-			ledSavedTime = millis();
-		}
+		blinkLED();
 
 		// Start moving up and count steps
 		if (tryMove(false))
@@ -261,35 +282,37 @@ void loop() {
 		}
 		break;
 	case ELEV_STATE::RUNNING:
-		if (!m_isWaitingForPassengers)
+		if (nightTime())
 		{
-			if (tryMove(moveDown))
-			{
-				curStep--;
-			}
+			blinkLED(LED_BLINK_SPEED * 3); // blink slower to indicate last night ride
 		}
-		// TODO: fix overflow
-		else if (millis() - waitForPassengersTimestamp >= WAIT_FOR_PASSENGERS_DURATION)
+
+		if (tryMove(moveDown))
 		{
-			m_isWaitingForPassengers = false;
+			curStep--;
 		}
 
 		if (curStep == 0)
 		{
 			setDirection(!moveDown);
-			m_isWaitingForPassengers = true;
 			clearMotorPorts();
-			waitForPassengersTimestamp = millis();
-		}
 
-		if (CurCalibBtnAction == BTN_ACTION::DOWN)
+			// Prevent overflow, reset timer
+			elev_timer = 0;
+			SetState(ELEV_STATE::SLEEPING);
+		}
+		else if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
+			setLED(LOW);
 			SetState(ELEV_STATE::IDLE);
 			clearMotorPorts();
 		}
+
 		break;
 	}
 	//turn90();
 	//PORTD = PORTD & SERIALMASK;   
 	//delay(30);
+
+	prevMillis = nowMillis;
 }

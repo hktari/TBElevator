@@ -118,11 +118,13 @@
   <ItemGroup>
     <ClInclude Include="ArduinoProxy.h" />
     <ClInclude Include="Elevator.h" />
+    <ClInclude Include="lib\LowPower.h" />
     <ClInclude Include="__vm\.TBElevator.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ArduinoProxy.cpp" />
     <ClCompile Include="Elevator.cpp" />
+    <ClCompile Include="lib\LowPower.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
