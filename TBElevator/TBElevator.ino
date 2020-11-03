@@ -74,9 +74,6 @@ int curStep = 0;
 bool moveDown;
 int ledState = LOW;
 
-bool m_isWaitingForPassengers = false;
-unsigned long waitForPassengersTimestamp = millis();
-
 unsigned long prevMillis, nowMillis = 0;
 
 //#region Forward declarations
@@ -189,7 +186,7 @@ void clearMotorPorts()
 }
 bool nightTime()
 {
-	return digitalRead(NIGHT_TIME_SWITCH_PIN) == HIGH && analogRead(NIGHT_SENSOR_PIN) <= 70;
+	return analogRead(NIGHT_SENSOR_PIN) <= 70;
 }
 
 void blinkLED(const unsigned long& blinkSpeed = LED_BLINK_SPEED)
@@ -216,12 +213,17 @@ void setup() {
 	SetState(ELEV_STATE::CALIBRATION_STARTED);
 }
 
+bool nightTimeEnabled()
+{
+	return digitalRead(NIGHT_TIME_SWITCH_PIN) == HIGH;
+}
+
 void loop() {
 	nowMillis = millis();
 
 	static unsigned long elev_timer = 0;
-	const unsigned long ELEVATOR_RUN_INTERVAL = 720000; // 12 min
-	//const unsigned long ELEVATOR_RUN_INTERVAL = 10000; // 12 min
+	//const unsigned long ELEVATOR_RUN_INTERVAL = 720000; // 12 min
+	const unsigned long ELEVATOR_RUN_INTERVAL = 10000; // 12 min
 	HandleCalibBtn();
 
 	//Serial.println((int)curState);
@@ -231,13 +233,19 @@ void loop() {
 	case ELEV_STATE::SLEEPING:
 		elev_timer += nowMillis - prevMillis;
 
-		if (elev_timer >= ELEVATOR_RUN_INTERVAL)
+		// Make sure that if night time is disabled that it's not currently night
+		if (elev_timer >= ELEVATOR_RUN_INTERVAL && (nightTimeEnabled() || !nightTime()))
 		{
 			setLED(LOW);
 			SetState(ELEV_STATE::RUNNING);
 		}
 		else
 		{
+      Serial.print("Night sensor: ");
+      Serial.println(analogRead(NIGHT_SENSOR_PIN));
+
+      Serial.print("Night mode enabled: ");
+      Serial.println(nightTimeEnabled());
 			Serial.println("goign to sleep");
 			Serial.flush();
 			LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
@@ -275,16 +283,15 @@ void loop() {
 		// User presses calibration button
 		if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
-			m_isWaitingForPassengers = false;
 			setDirection(true);
 			setLED(LOW);
 			SetState(ELEV_STATE::RUNNING);
 		}
 		break;
 	case ELEV_STATE::RUNNING:
-		if (nightTime())
+		if (!nightTimeEnabled() && nightTime())
 		{
-			blinkLED(LED_BLINK_SPEED * 3); // blink slower to indicate last night ride
+			blinkLED(LED_BLINK_SPEED * 2); // blink slower to indicate last night ride
 		}
 
 		if (tryMove(moveDown))
@@ -300,6 +307,7 @@ void loop() {
 			// Prevent overflow, reset timer
 			elev_timer = 0;
 			SetState(ELEV_STATE::SLEEPING);
+      setLED(LOW);
 		}
 		else if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
