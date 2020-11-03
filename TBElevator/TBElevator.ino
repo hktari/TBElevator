@@ -86,10 +86,11 @@ unsigned long prevMillis, nowMillis = 0;
 
 void SetState(ELEV_STATE state)
 {
+#ifdef DEBUG
 	Serial.println((int)state);
+#endif // DEBUG
 	curState = state;
 }
-
 
 void phase8(bool isClockwise) {
 	// Clear stepper pins
@@ -177,12 +178,12 @@ void setDirection(bool down)
 	phaseIndex = 0;
 }
 
-
 void clearMotorPorts()
 {
 	// Clear stepper pins
 	PORTD = PORTD & SERIALMASK;
 }
+
 bool nightTime()
 {
 	return analogRead(NIGHT_SENSOR_PIN) <= 70;
@@ -206,8 +207,12 @@ void setup() {
 	pinMode(STATE_LED_PIN, OUTPUT);
 	//pinMode(NIGHT_SENSOR_PIN, INPUT);
 	pinMode(NIGHT_TIME_SWITCH_PIN, INPUT);
+
+#ifdef DEBUG
 	Serial.begin(9600);
 	Serial.println();
+#endif // DEBUG
+
 	SetState(ELEV_STATE::CALIBRATION_STARTED);
 }
 
@@ -224,8 +229,6 @@ void loop() {
 	//const unsigned long ELEVATOR_RUN_INTERVAL = 10000; // 12 min
 	HandleCalibBtn();
 
-	//Serial.println((int)curState);
-
 	switch (curState)
 	{
 	case ELEV_STATE::SLEEPING:
@@ -239,13 +242,15 @@ void loop() {
 		}
 		else
 		{
-			/*Serial.print("Night sensor: ");
+#ifdef DEBUG
+			Serial.print("Night sensor: ");
 			Serial.println(analogRead(NIGHT_SENSOR_PIN));
 
 			Serial.print("Night mode enabled: ");
 			Serial.println(nightTimeEnabled());
 			Serial.println("goign to sleep");
-			Serial.flush();*/
+			Serial.flush();
+#endif // DEBUG
 			LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 			elev_timer += 8000; // account for clock not running while power down;
 		}
