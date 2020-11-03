@@ -58,12 +58,12 @@ const int STATE_LED_PIN = 11;
 const uint8_t NIGHT_TIME_SWITCH_PIN = A2;
 const uint8_t NIGHT_SENSOR_PIN = A0;
 
-long timeNow;
+unsigned long timeNow;
 long timeInterval = 1200;
 bool rotateDirection = true;
-long savedTime = micros();
+unsigned long savedTime = micros();
 
-long lastCalibBtnDown = 0;
+unsigned long lastCalibBtnDown = 0;
 bool longPressCondition = 0;
 int prevCalibBtnState = LOW;
 ELEV_STATE curState = ELEV_STATE::CALIBRATION_STARTED;
@@ -130,7 +130,6 @@ bool tryMove(bool down)
 {
 	timeNow = micros();
 
-	// TODO: fix overflow
 	if (timeNow - savedTime > timeInterval) {
 		phase8(down);
 		savedTime = micros();
@@ -208,7 +207,6 @@ void setup() {
 	//pinMode(NIGHT_SENSOR_PIN, INPUT);
 	pinMode(NIGHT_TIME_SWITCH_PIN, INPUT);
 	Serial.begin(9600);
-
 	Serial.println();
 	SetState(ELEV_STATE::CALIBRATION_STARTED);
 }
@@ -222,8 +220,8 @@ void loop() {
 	nowMillis = millis();
 
 	static unsigned long elev_timer = 0;
-	//const unsigned long ELEVATOR_RUN_INTERVAL = 720000; // 12 min
-	const unsigned long ELEVATOR_RUN_INTERVAL = 10000; // 12 min
+	const unsigned long ELEVATOR_RUN_INTERVAL = 720000; // 12 min
+	//const unsigned long ELEVATOR_RUN_INTERVAL = 10000; // 12 min
 	HandleCalibBtn();
 
 	//Serial.println((int)curState);
@@ -241,13 +239,13 @@ void loop() {
 		}
 		else
 		{
-      Serial.print("Night sensor: ");
-      Serial.println(analogRead(NIGHT_SENSOR_PIN));
+			/*Serial.print("Night sensor: ");
+			Serial.println(analogRead(NIGHT_SENSOR_PIN));
 
-      Serial.print("Night mode enabled: ");
-      Serial.println(nightTimeEnabled());
+			Serial.print("Night mode enabled: ");
+			Serial.println(nightTimeEnabled());
 			Serial.println("goign to sleep");
-			Serial.flush();
+			Serial.flush();*/
 			LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 			elev_timer += 8000; // account for clock not running while power down;
 		}
@@ -307,7 +305,7 @@ void loop() {
 			// Prevent overflow, reset timer
 			elev_timer = 0;
 			SetState(ELEV_STATE::SLEEPING);
-      setLED(LOW);
+			setLED(LOW);
 		}
 		else if (CurCalibBtnAction == BTN_ACTION::DOWN)
 		{
